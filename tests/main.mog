@@ -1,0 +1,36 @@
+const json = @import("github.com/moglang/json")
+
+fn assert(condition bool, message str) void { if (!condition) error(message) }
+
+var quote str = charFromCode(34)
+var slash str = charFromCode(92)
+
+var scalar json.Json = json.parse(" -12.5e+2 ")
+assert(scalar.kind == "number" && scalar.number == -1250.0, "number parsing")
+
+var values json.Json = json.parse("[1,true,false,null,[]]")
+assert(values.kind == "array" && values.items.size() == 5, "heterogeneous array")
+assert(values.items[1].boolean && !values.items[2].boolean, "boolean values")
+assert(values.items[3].kind == "null" && values.items[4].items.size() == 0, "null and empty array")
+
+var stringValue json.Json = json.parse(quote + "line" + slash + "n" + "tab" + slash + "t" + quote)
+assert(stringValue.kind == "string" && stringValue.text == "line\ntab\t", "string escapes")
+
+var objectText str = "{" + quote + "z" + quote + ":[false,{" + quote + "a" + quote + ":1}]," + quote + "n" + quote + ":null}"
+var object json.Json = json.parse(objectText)
+assert(object.kind == "object" && object.fields.get("z").items[1].fields.get("a").number == 1.0, "nested object")
+assert(json.stringify(object) == "{" + quote + "n" + quote + ":null," + quote + "z" + quote + ":[false,{" + quote + "a" + quote + ":1}]}", "deterministic object keys")
+
+var duplicate json.Json = json.parse("{" + quote + "key" + quote + ":1," + quote + "key" + quote + ":2}")
+assert(duplicate.fields.get("key").number == 2.0, "duplicate keys are last-wins")
+
+var control json.Json = json.Json()
+control.kind = "string"
+control.text = charFromCode(8) + charFromCode(12) + charFromCode(31)
+assert(json.stringify(control) == quote + slash + "u0008" + slash + "u000c" + slash + "u001f" + quote, "control character escaping")
+
+var unicode json.Json = json.parse(quote + slash + "u0041" + slash + "u00df" + quote)
+assert(unicode.text == "A" + charFromCode(195) + charFromCode(159), "unicode escape decoding")
+
+var emoji json.Json = json.parse(quote + slash + "uD83D" + slash + "uDE00" + quote)
+assert(emoji.text == charFromCode(240) + charFromCode(159) + charFromCode(152) + charFromCode(128), "unicode surrogate pair decoding")

@@ -1,0 +1,4 @@
+package json
+type Json struct
+fn parse(text str) Json
+fn stringify(value Json) str

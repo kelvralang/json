@@ -1,0 +1,13 @@
+kind = "source"
+module = "github.com/moglang/json"
+import_name = "json"
+namespace = "github"
+name = "json"
+version = "0.1.1"
+license = "MIT"
+mog_runtime = "^0.1.1"
+author = "Mog contributors"
+description = "JSON parsing and deterministic serialization for MOG values."
+repository = "https://github.com/moglang/json"
+entry = "src/main.mog"
+dependencies = []

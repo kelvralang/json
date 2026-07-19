@@ -1,0 +1,274 @@
+type Json struct {
+    kind str
+    boolean bool
+    number f64
+    text str
+    items Array<Json>
+    fields Dict<str, Json>
+}
+
+var _input str = ""
+var _cursor i64 = 0
+
+fn _new(kind str) Json {
+    var value Json = Json()
+    value.kind = kind
+    value.items = Array<Json>()
+    value.fields = Dict<str, Json>()
+    return value
+}
+
+fn _isWhitespace(code i64) bool {
+    return code == 32 || code == 9 || code == 10 || code == 13
+}
+
+fn _skipWhitespace() void {
+    while (_cursor < len(_input) && _isWhitespace(charCodeAt(_input, _cursor))) {
+        _cursor = _cursor + 1
+    }
+}
+
+fn _consume(code i64) bool {
+    _skipWhitespace()
+    if (_cursor < len(_input) && charCodeAt(_input, _cursor) == code) {
+        _cursor = _cursor + 1
+        return true
+    }
+    return false
+}
+
+fn _expectWord(word str) void {
+    var index i64 = 0
+    while (index < len(word)) {
+        if (_cursor >= len(_input) || charCodeAt(_input, _cursor) != charCodeAt(word, index)) {
+            error("invalid JSON literal")
+        }
+        _cursor = _cursor + 1
+        index = index + 1
+    }
+}
+
+fn _parseString() str {
+    if (!_consume(34)) error("expected JSON string")
+    var out str = ""
+    while (_cursor < len(_input)) {
+        var code i64 = charCodeAt(_input, _cursor)
+        _cursor = _cursor + 1
+        if (code == 34) return out
+        if (code != 92) {
+            if (code < 32) error("unescaped control character in JSON string")
+            out = out + charFromCode(code)
+        } else {
+            if (_cursor >= len(_input)) error("unterminated JSON escape")
+            code = charCodeAt(_input, _cursor)
+            _cursor = _cursor + 1
+            if (code == 34 || code == 92 || code == 47) {
+                out = out + charFromCode(code)
+            } else if (code == 98) {
+                out = out + charFromCode(8)
+            } else if (code == 102) {
+                out = out + charFromCode(12)
+            } else if (code == 110) {
+                out = out + "\n"
+            } else if (code == 114) {
+                out = out + "\r"
+            } else if (code == 116) {
+                out = out + "\t"
+            } else if (code == 117) {
+                out = out + _parseUnicodeEscape()
+            } else {
+                error("invalid JSON escape")
+            }
+        }
+    }
+    error("unterminated JSON string")
+}
+
+fn _hexValue(code i64) i64 {
+    if (code >= 48 && code <= 57) return code - 48
+    if (code >= 65 && code <= 70) return code - 55
+    if (code >= 97 && code <= 102) return code - 87
+    return -1
+}
+
+fn _utf8(code i64) str {
+    if (code <= 127) return charFromCode(code)
+    if (code <= 2047) return charFromCode(192 + code / 64) + charFromCode(128 + code - (code / 64) * 64)
+    if (code <= 65535) return charFromCode(224 + code / 4096) + charFromCode(128 + (code / 64 - (code / 4096) * 64)) + charFromCode(128 + code - (code / 64) * 64)
+    return charFromCode(240 + code / 262144) + charFromCode(128 + (code / 4096 - (code / 262144) * 64)) + charFromCode(128 + (code / 64 - (code / 4096) * 64)) + charFromCode(128 + code - (code / 64) * 64)
+}
+
+fn _parseUnicodeEscape() str {
+    if (_cursor + 4 > len(_input)) error("incomplete JSON unicode escape")
+    var code i64 = 0
+    var index i64 = 0
+    while (index < 4) {
+        var digit i64 = _hexValue(charCodeAt(_input, _cursor))
+        if (digit < 0) error("invalid JSON unicode escape")
+        code = code * 16 + digit
+        _cursor = _cursor + 1
+        index = index + 1
+    }
+    if (code >= 55296 && code <= 56319) {
+        if (_cursor + 6 > len(_input) || charCodeAt(_input, _cursor) != 92 || charCodeAt(_input, _cursor + 1) != 117) error("unpaired JSON unicode surrogate")
+        _cursor = _cursor + 2
+        var low i64 = 0
+        index = 0
+        while (index < 4) {
+            var digit i64 = _hexValue(charCodeAt(_input, _cursor))
+            if (digit < 0) error("invalid JSON unicode escape")
+            low = low * 16 + digit
+            _cursor = _cursor + 1
+            index = index + 1
+        }
+        if (low < 56320 || low > 57343) error("unpaired JSON unicode surrogate")
+        return _utf8(65536 + (code - 55296) * 1024 + low - 56320)
+    }
+    if (code >= 56320 && code <= 57343) error("unpaired JSON unicode surrogate")
+    return _utf8(code)
+}
+
+fn _parseNumber() f64 {
+    var start i64 = _cursor
+    if (_cursor < len(_input) && charCodeAt(_input, _cursor) == 45) _cursor = _cursor + 1
+    if (_cursor >= len(_input)) error("invalid JSON number")
+    if (charCodeAt(_input, _cursor) == 48) {
+        _cursor = _cursor + 1
+        if (_cursor < len(_input) && charCodeAt(_input, _cursor) >= 48 && charCodeAt(_input, _cursor) <= 57) error("leading zero in JSON number")
+    } else if (charCodeAt(_input, _cursor) >= 49 && charCodeAt(_input, _cursor) <= 57) {
+        while (_cursor < len(_input) && charCodeAt(_input, _cursor) >= 48 && charCodeAt(_input, _cursor) <= 57) _cursor = _cursor + 1
+    } else { error("invalid JSON number") }
+    if (_cursor < len(_input) && charCodeAt(_input, _cursor) == 46) {
+        _cursor = _cursor + 1
+        if (_cursor >= len(_input) || charCodeAt(_input, _cursor) < 48 || charCodeAt(_input, _cursor) > 57) error("invalid JSON number fraction")
+        while (_cursor < len(_input) && charCodeAt(_input, _cursor) >= 48 && charCodeAt(_input, _cursor) <= 57) _cursor = _cursor + 1
+    }
+    if (_cursor < len(_input) && (charCodeAt(_input, _cursor) == 69 || charCodeAt(_input, _cursor) == 101)) {
+        _cursor = _cursor + 1
+        if (_cursor < len(_input) && (charCodeAt(_input, _cursor) == 43 || charCodeAt(_input, _cursor) == 45)) _cursor = _cursor + 1
+        if (_cursor >= len(_input) || charCodeAt(_input, _cursor) < 48 || charCodeAt(_input, _cursor) > 57) error("invalid JSON number exponent")
+        while (_cursor < len(_input) && charCodeAt(_input, _cursor) >= 48 && charCodeAt(_input, _cursor) <= 57) _cursor = _cursor + 1
+    }
+    return parseFloat(slice(_input, start, _cursor))
+}
+
+fn _parseValue() Json {
+    _skipWhitespace()
+    if (_cursor >= len(_input)) error("unexpected end of JSON")
+    var code i64 = charCodeAt(_input, _cursor)
+    if (code == 34) {
+        var value Json = _new("string")
+        value.text = _parseString()
+        return value
+    }
+    if (code == 123) {
+        _cursor = _cursor + 1
+        var value Json = _new("object")
+        _skipWhitespace()
+        if (_consume(125)) return value
+        while (true) {
+            var key str = _parseString()
+            if (!_consume(58)) error("expected ':' in JSON object")
+            value.fields[key] = _parseValue()
+            if (_consume(125)) return value
+            if (!_consume(44)) error("expected ',' in JSON object")
+        }
+    }
+    if (code == 91) {
+        _cursor = _cursor + 1
+        var value Json = _new("array")
+        _skipWhitespace()
+        if (_consume(93)) return value
+        while (true) {
+            value.items.push(_parseValue())
+            if (_consume(93)) return value
+            if (!_consume(44)) error("expected ',' in JSON array")
+        }
+    }
+    if (code == 116) {
+        _expectWord("true")
+        var value Json = _new("bool")
+        value.boolean = true
+        return value
+    }
+    if (code == 102) {
+        _expectWord("false")
+        var value Json = _new("bool")
+        value.boolean = false
+        return value
+    }
+    if (code == 110) {
+        _expectWord("null")
+        return _new("null")
+    }
+    if (code == 45 || (code >= 48 && code <= 57)) {
+        var value Json = _new("number")
+        value.number = _parseNumber()
+        return value
+    }
+    error("invalid JSON value")
+}
+
+fn parse(text str) Json {
+    _input = text
+    _cursor = 0
+    var value Json = _parseValue()
+    _skipWhitespace()
+    if (_cursor != len(_input)) error("trailing JSON input")
+    return value
+}
+
+fn _quote(text str) str {
+    var out str = charFromCode(34)
+    for (var character str : text) {
+        var code i64 = charCodeAt(character, 0)
+        if (code == 34 || code == 92) {
+            out = out + charFromCode(92) + character
+        } else if (code == 10) {
+            out = out + charFromCode(92) + "n"
+        } else if (code == 13) {
+            out = out + charFromCode(92) + "r"
+        } else if (code == 9) {
+            out = out + charFromCode(92) + "t"
+        } else if (code < 32) {
+            var hex str = "0123456789abcdef"
+            out = out + charFromCode(92) + "u00" + charFromCode(charCodeAt(hex, code / 16)) + charFromCode(charCodeAt(hex, code - (code / 16) * 16))
+        } else {
+            out = out + character
+        }
+    }
+    return out + charFromCode(34)
+}
+
+fn stringify(value Json) str {
+    if (value.kind == "null") return "null"
+    if (value.kind == "bool") {
+        if (value.boolean) return "true"
+        return "false"
+    }
+    if (value.kind == "number") return str(value.number)
+    if (value.kind == "string") return _quote(value.text)
+    if (value.kind == "array") {
+        var out str = "["
+        var index i64 = 0
+        while (index < value.items.size()) {
+            if (index > 0) out = out + ","
+            out = out + stringify(value.items[index])
+            index = index + 1
+        }
+        return out + "]"
+    }
+    if (value.kind == "object") {
+        var out str = "{"
+        var keys Array<str> = value.fields.keys()
+        var index i64 = 0
+        while (index < keys.size()) {
+            if (index > 0) out = out + ","
+            var key str = keys[index]
+            out = out + _quote(key) + ":" + stringify(value.fields[key])
+            index = index + 1
+        }
+        return out + "}"
+    }
+    error("unknown JSON value kind")
+}
