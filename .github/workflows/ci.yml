@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate:
+  compatibility:
     name: Mog ${{ matrix.runtime_ref }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -83,3 +83,14 @@ jobs:
               exit 1
             fi
           done
+
+  validate:
+    if: always()
+    needs: compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require compatibility matrix
+        env:
+          RESULT: ${{ needs.compatibility.result }}
+        run: test "$RESULT" = success
