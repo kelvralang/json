@@ -1,0 +1,7 @@
+const json = @import("github.com/moglang/json")
+
+var quote str = charFromCode(34)
+var slash str = charFromCode(92)
+
+// Expected runtime error: a high surrogate requires a matching low surrogate.
+json.parse(quote + slash + "uD83D" + quote)

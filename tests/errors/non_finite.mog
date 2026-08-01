@@ -1,0 +1,4 @@
+const json = @import("github.com/moglang/json")
+
+// Expected runtime error: JSON has no representation for infinity.
+json.numberValue(parseFloat("inf"))

@@ -1,0 +1,8 @@
+const json = @import("github.com/moglang/json")
+
+var value json.Json = json.Json()
+value.kind = "number"
+value.number = parseFloat("nan")
+
+// Expected runtime error even for a DOM made through compatibility field access.
+json.stringify(value)
