@@ -1,4 +1,17 @@
 package json
 type Json struct
+fn nullValue() Json
+fn boolValue(value bool) Json
+fn numberValue(value f64) Json
+fn stringValue(value str) Json
+fn arrayValue(value Array<Json>) Json
+fn objectValue(value Dict<str, Json>) Json
+fn kindOf(value Json) str
+fn isNull(value Json) bool
+fn asBool(value Json) bool
+fn asNumber(value Json) f64
+fn asString(value Json) str
+fn asArray(value Json) Array<Json>
+fn asObject(value Json) Dict<str, Json>
 fn parse(text str) Json
 fn stringify(value Json) str

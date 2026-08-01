@@ -7,6 +7,7 @@ var slash str = charFromCode(92)
 
 var scalar json.Json = json.parse(" -12.5e+2 ")
 assert(scalar.kind == "number" && scalar.number == -1250.0, "number parsing")
+assert(json.asNumber(scalar) == -1250.0, "number accessor")
 
 var values json.Json = json.parse("[1,true,false,null,[]]")
 assert(values.kind == "array" && values.items.size() == 5, "heterogeneous array")
@@ -34,3 +35,24 @@ assert(unicode.text == "A" + charFromCode(195) + charFromCode(159), "unicode esc
 
 var emoji json.Json = json.parse(quote + slash + "uD83D" + slash + "uDE00" + quote)
 assert(emoji.text == charFromCode(240) + charFromCode(159) + charFromCode(152) + charFromCode(128), "unicode surrogate pair decoding")
+
+var madeItems Array<json.Json> = []
+madeItems.push(json.nullValue())
+madeItems.push(json.boolValue(true))
+madeItems.push(json.numberValue(2.5))
+madeItems.push(json.stringValue("made"))
+var made json.Json = json.arrayValue(madeItems)
+assert(json.kindOf(made) == "array" && json.isNull(made.items[0]), "kind and null inspection")
+assert(json.asArray(made).size() == 4, "array constructor and accessor")
+assert(json.asBool(made.items[1]), "boolean constructor and accessor")
+assert(json.asString(made.items[3]) == "made", "string constructor and accessor")
+assert(json.stringify(made) == "[null,true,2.5," + quote + "made" + quote + "]", "constructed value serialization")
+
+var madeFields Dict<str, json.Json> = Dict<str, json.Json>()
+madeFields["answer"] = json.numberValue(42.0)
+var madeObject json.Json = json.objectValue(madeFields)
+assert(json.asObject(madeObject).get("answer").number == 42.0, "object constructor and accessor")
+
+assert(json.stringify(json.parse("{}")) == "{}", "empty object round trip")
+assert(json.stringify(json.parse(quote + quote)) == quote + quote, "empty string round trip")
+assert(json.stringify(json.parse("-0")) == "-0", "negative zero remains valid JSON")

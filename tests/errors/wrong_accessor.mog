@@ -1,0 +1,4 @@
+const json = @import("github.com/moglang/json")
+
+// Expected runtime error: typed accessors reject the wrong JSON kind.
+json.asString(json.boolValue(true))

@@ -1,0 +1,4 @@
+const json = @import("github.com/moglang/json")
+
+// Expected runtime error: leading zeroes are not valid JSON numbers.
+json.parse("01")
