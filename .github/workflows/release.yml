@@ -47,7 +47,7 @@ jobs:
           mkdir -p "$(dirname "$stage")" "$project"
           rsync -a --exclude .git --exclude .runtime "$GITHUB_WORKSPACE/" "$stage/"
           "$runtime" validate-package "$stage"
-          sed -e "s|json|$PACKAGE_NAME|g" -e "s|__PACKAGE_VERSION__|$version|g" -e "s|__PACKAGE_PATH__|$stage|g" \
+          sed -e "s|__PACKAGE_NAME__|$PACKAGE_NAME|g" -e "s|__PACKAGE_VERSION__|$version|g" -e "s|__PACKAGE_PATH__|$stage|g" \
             "$GITHUB_WORKSPACE/.github/package-test.toml.in" > "$project/mog.toml"
           (
             cd "$project"
