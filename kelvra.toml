@@ -1,0 +1,13 @@
+kind = "source"
+module = "github.com/kelvralang/json"
+import_name = "json"
+namespace = "github"
+name = "json"
+version = "0.2.0"
+license = "GPL-3.0-only"
+kelvra_runtime = "^0.2.0"
+author = "Kelvra contributors"
+description = "JSON parsing and deterministic serialization for KELVRA values."
+repository = "https://github.com/kelvralang/json"
+entry = "src/main.kel"
+dependencies = []

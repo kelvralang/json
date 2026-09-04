@@ -1,4 +1,4 @@
-const json = @import("github.com/moglang/json")
+const json = @import("github.com/kelvralang/json")
 
 // Expected runtime error: JSON has no representation for infinity.
 json.numberValue(parseFloat("inf"))

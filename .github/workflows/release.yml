@@ -21,43 +21,43 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          repository: moglang/mog
+          repository: kelvralang/kelvra
           ref: main
-          path: .runtime/mog
+          path: .runtime/kelvra
       - name: Verify tag and manifest version
         shell: bash
         run: |
           set -euo pipefail
-          version="$(sed -n 's/^version = "\([^"]*\)"/\1/p' mog.toml | head -n 1)"
+          version="$(sed -n 's/^version = "\([^"]*\)"/\1/p' kelvra.toml | head -n 1)"
           test -n "$version"
           test "${GITHUB_REF_NAME#v}" = "$version"
           grep -Fq "## $version" CHANGELOG.md
-      - name: Build Mog runtime
+      - name: Build Kelvra runtime
         run: |
-          cmake -S .runtime/mog -B .runtime/mog/build -DCMAKE_BUILD_TYPE=Release
-          cmake --build .runtime/mog/build --parallel
+          cmake -S .runtime/kelvra -B .runtime/kelvra/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build .runtime/kelvra/build --parallel
       - name: Validate package and run tests
         shell: bash
         run: |
           set -euo pipefail
-          runtime="$GITHUB_WORKSPACE/.runtime/mog/build/interpreter"
+          runtime="$GITHUB_WORKSPACE/.runtime/kelvra/build/kelvra"
           version="${GITHUB_REF_NAME#v}"
-          stage="$RUNNER_TEMP/stage/github.com/moglang/$PACKAGE_NAME"
+          stage="$RUNNER_TEMP/stage/github.com/kelvralang/$PACKAGE_NAME"
           project="$RUNNER_TEMP/package-test"
           mkdir -p "$(dirname "$stage")" "$project"
           rsync -a --exclude .git --exclude .runtime "$GITHUB_WORKSPACE/" "$stage/"
           "$runtime" validate-package "$stage"
           sed -e "s|__PACKAGE_NAME__|$PACKAGE_NAME|g" -e "s|__PACKAGE_VERSION__|$version|g" -e "s|__PACKAGE_PATH__|$stage|g" \
-            "$GITHUB_WORKSPACE/.github/package-test.toml.in" > "$project/mog.toml"
+            "$GITHUB_WORKSPACE/.github/package-test.toml.in" > "$project/kelvra.toml"
           (
             cd "$project"
-            MOG_CACHE_DIR="$RUNNER_TEMP/mog-cache" "$runtime" run "$stage/tests/main.mog"
+            KELVRA_CACHE_DIR="$RUNNER_TEMP/kelvra-cache" "$runtime" run "$stage/tests/main.kel"
           )
-          for fixture in "$stage"/tests/errors/*.mog; do
+          for fixture in "$stage"/tests/errors/*.kel; do
             [[ -e "$fixture" ]] || continue
             if (
               cd "$project"
-              MOG_CACHE_DIR="$RUNNER_TEMP/mog-cache" "$runtime" run "$fixture"
+              KELVRA_CACHE_DIR="$RUNNER_TEMP/kelvra-cache" "$runtime" run "$fixture"
             ); then
               echo "Expected failure fixture succeeded: $fixture" >&2
               exit 1
