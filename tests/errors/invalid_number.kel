@@ -1,4 +1,4 @@
-const json = @import("github.com/moglang/json")
+const json = @import("github.com/kelvralang/json")
 
 // Expected runtime error: leading zeroes are not valid JSON numbers.
 json.parse("01")

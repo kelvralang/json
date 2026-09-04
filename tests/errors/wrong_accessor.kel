@@ -1,4 +1,4 @@
-const json = @import("github.com/moglang/json")
+const json = @import("github.com/kelvralang/json")
 
 // Expected runtime error: typed accessors reject the wrong JSON kind.
 json.asString(json.boolValue(true))

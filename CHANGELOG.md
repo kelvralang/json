@@ -2,7 +2,9 @@
 
 ## 0.2.0
 
-- Correct the minimum supported runtime to Mog 0.1.4, the first release that
+- Rename package manifests, source files, imports, automation, and documentation from Mog to Kelvra; require Kelvra 0.2.0 or newer.
+
+- Correct the minimum supported runtime to Kelvra 0.1.4, the first release that
   embeds its configured package-compatibility version correctly.
 - Add pinned CI/release automation with tag checks, 0.1.4/current-runtime tests,
   checksummed archives, and automated action updates.
@@ -22,7 +24,7 @@
 ## 0.1.1
 
 - Serialize JSON control characters with the required single escaped form.
-- Document and require Mog runtime 0.1.1 or newer for JSON string processing.
+- Document and require Kelvra runtime 0.1.1 or newer for JSON string processing.
 
 ## 0.1.0
 

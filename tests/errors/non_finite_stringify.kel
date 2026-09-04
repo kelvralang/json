@@ -1,4 +1,4 @@
-const json = @import("github.com/moglang/json")
+const json = @import("github.com/kelvralang/json")
 
 var value json.Json = json.Json()
 value.kind = "number"
