@@ -18,8 +18,8 @@ jobs:
     env:
       PACKAGE_NAME: "json"
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: kelvralang/kelvra
           ref: main
@@ -73,7 +73,7 @@ jobs:
     env:
       PACKAGE_NAME: "json"
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Bundle package and generate checksum
         shell: bash
         run: |
@@ -84,7 +84,7 @@ jobs:
           rsync -a --exclude .git --exclude .github --exclude build ./ "$bundle/"
           tar -C "$RUNNER_TEMP" -czf "$PACKAGE_NAME-$version.tar.gz" "$PACKAGE_NAME-$version"
           sha256sum "$PACKAGE_NAME-$version.tar.gz" > SHA256SUMS
-      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: |
             json-*.tar.gz
